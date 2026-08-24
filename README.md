@@ -39,7 +39,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8889 (WHEP `/scanner/whep`). VLC should use `rtsp://<docker-host>:8554/scanner` (HLS cannot carry G.711). MediaMTX image default is `bluenviron/mediamtx:1-ffmpeg`: it pulls the radio on path `raw`, then ffmpeg gates scan hiss and compresses speech onto `scanner`. Do not run Siren, ProScan, or RH-536HP at the same time.
+Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8889 (WHEP `/scanner/whep`). VLC should use `rtsp://<docker-host>:8554/scanner` (HLS cannot carry G.711). MediaMTX image default is `bluenviron/mediamtx:1-ffmpeg`: it pulls the radio on path `raw`, then ffmpeg gates scan hiss and compresses speech onto `scanner`. Tune `AUDIO_GATE_THRESHOLD` in `.env` (lower if speech is chopped; raise if hiss remains). Do not run Siren, ProScan, or RH-536HP at the same time.
 
 If RTSP UDP still fails, set `rtspTransport: tcp` in `mediamtx.yml` (interleaved TCP fallback). An existing `.env` that sets `MEDIAMTX_TAG=1` will start MediaMTX without ffmpeg and the audio hook will fail.
 

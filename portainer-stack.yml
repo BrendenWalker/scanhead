@@ -36,7 +36,7 @@ services:
       MTX_PATHDEFAULTS_RTSPANYPORT: "yes"
       MTX_PATHDEFAULTS_RTSPTRANSPORT: udp
       MTX_PATHS_RAW_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP}}/au:scanner.au
-      MTX_PATHS_RAW_RUNONAVAILABLE: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=200,agate=threshold=0.03:ratio=10:attack=5:release=150:range=0.002,acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4 -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
+      MTX_PATHS_RAW_RUNONAVAILABLE: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=${AUDIO_HIGHPASS_HZ:-200},agate=threshold=${AUDIO_GATE_THRESHOLD:-0.01}:ratio=${AUDIO_GATE_RATIO:-10}:attack=${AUDIO_GATE_ATTACK_MS:-5}:release=${AUDIO_GATE_RELEASE_MS:-150}:range=${AUDIO_GATE_RANGE:-0.002},acompressor=threshold=${AUDIO_COMP_THRESHOLD:-0.1}:ratio=${AUDIO_COMP_RATIO:-6}:attack=${AUDIO_COMP_ATTACK_MS:-10}:release=${AUDIO_COMP_RELEASE_MS:-200}:makeup=${AUDIO_COMP_MAKEUP:-4} -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
       MTX_PATHS_RAW_RUNONAVAILABLERESTART: "yes"
       MTX_PATHS_SCANNER_SOURCE: publisher
 
