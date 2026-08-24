@@ -43,7 +43,22 @@ Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8
 
 If RTSP UDP still fails, set `rtspTransport: tcp` in `mediamtx.yml` (interleaved TCP fallback).
 
-Published app images are on Docker Hub as `derpmhichurp/scanhead`. Compose still builds locally by default; to pull instead, set the `app` service image to a published tag.
+To run the published image instead of building:
+
+```bash
+IMAGE_TAG=latest docker compose pull
+docker compose up -d
+```
+
+### Portainer (Linux Docker Standalone)
+
+Do not deploy this as a Swarm stack. The Portainer stack **publishes ports** on a bridge network (so they show in Portainer). MediaMTX uses RTSP interleaved TCP to the scanner.
+
+1. Stacks → Add stack → Web editor; paste [portainer-stack.yml](portainer-stack.yml).
+2. Add environment variables from [portainer-stack.env.example](portainer-stack.env.example). Set `SCANNER_IP` and `WEBRTC_HOST` (the LAN IP or hostname of the Docker host).
+3. Deploy. Portainer should list **8080** on `scanhead-app` and **8888**, **8889**, **8189/udp** on `scanhead-mediamtx`. Open `http://<docker-host>:8080`.
+
+Published app images are on Docker Hub as `derpmhichurp/scanhead`. Compose still builds locally by default; to pull instead, set `IMAGE_TAG` (and optionally `DOCKER_HUB_REGISTRY_USERNAME` / `DOCKER_HUB_IMAGE_NAME`).
 
 | Git tag | Docker tags |
 |---|---|

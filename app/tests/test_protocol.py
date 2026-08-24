@@ -1,5 +1,6 @@
 from scanhead.protocol import (
     Target,
+    attach_target,
     csv_cmd,
     key_labels_for_model,
     msv_value,
@@ -51,3 +52,17 @@ def test_target_srch_wx_and_placeholders():
         }
     )
     assert empty is None
+
+
+def test_attach_target_freezes_snapshot_handles():
+    status = {
+        "channelTag": "ConvFrequency",
+        "channel": {"Index": "25535", "Name": "DOJ-BNE Surveillance"},
+        "department": {"Index": "25517"},
+        "site": {},
+        "system": {"Index": "25514"},
+    }
+    attach_target(status)
+    assert status["target"] == {"tkw": "CFREQ", "xxx1": "25535", "xxx2": ""}
+    status["channel"] = {"Index": "999"}
+    assert status["target"]["xxx1"] == "25535"

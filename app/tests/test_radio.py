@@ -63,6 +63,7 @@ async def _mdl_and_gsi():
         status = await radio.gsi()
         assert status["property"]["VOL"] == "3"
         assert status["system"]["Name"] == "Test"
+        assert status["target"] == {"tkw": "SYS", "xxx1": "1", "xxx2": ""}
     finally:
         await radio.close()
         server.close()
@@ -135,6 +136,7 @@ async def _psi_broadcast():
         payload = await asyncio.wait_for(queue.get(), 2)
         assert payload["source"] == "PSI"
         assert payload["property"]["VOL"] == "9"
+        assert payload["target"]["tkw"] == "SYS"
         assert radio.psi_age_s() is not None
         snap = await radio.snapshot()
         assert snap["property"]["VOL"] == "9"

@@ -25,26 +25,29 @@
     <main class="shell">
       <section class="radio">
         <div id="display" class="display">
-          <div class="display-top">
+          <div class="display-top advanced">
             <span id="mode">—</span>
             <span id="p25" class="badge">—</span>
             <span id="mute" class="badge">—</span>
           </div>
+          <div class="dept-line">
+            <span class="label">Department</span>
+            <span id="dept">—</span>
+          </div>
             <div id="overwrite" class="overwrite"></div>
           <div id="channel-name" class="channel">Listening…</div>
-          <div class="freq-row">
+          <div class="freq-row advanced">
             <span id="freq" class="freq">—</span>
             <span id="mod" class="mod"></span>
           </div>
-          <dl class="stack">
+          <dl class="stack advanced">
             <div><dt>TGID</dt><dd id="tgid">—</dd></div>
             <div><dt>System</dt><dd id="sys">—</dd></div>
-            <div><dt>Department</dt><dd id="dept">—</dd></div>
             <div><dt>Site</dt><dd id="site">—</dd></div>
             <div><dt>Service</dt><dd id="svc">—</dd></div>
             <div><dt>Unit</dt><dd id="uid">—</dd></div>
           </dl>
-          <div class="meters">
+          <div class="meters advanced">
             <div>
               <span>Sig</span>
               <div id="sig" class="bars" data-n="0"></div>
@@ -57,22 +60,22 @@
           </div>
         </div>
 
-        <div class="sliders">
+        <div class="sliders advanced">
           <label>Vol <input id="vol" type="range" min="0" max="29" value="0" /><output id="vol-out">0</output></label>
           <label>Sql <input id="sql" type="range" min="0" max="19" value="0" /><output id="sql-out">0</output></label>
         </div>
 
         <div class="actions">
           <button type="button" data-act="hold">Hold</button>
-          <button type="button" data-act="prev">Prev</button>
-          <button type="button" data-act="next">Skip</button>
+          <button type="button" class="advanced" data-act="prev">Prev</button>
+          <button type="button" class="advanced" data-act="next">Skip</button>
           <button type="button" data-act="avoid" data-status="2">Temp avoid</button>
-          <button type="button" data-act="avoid" data-status="1">Avoid</button>
-          <button type="button" data-act="avoid" data-status="3">Unavoid</button>
+          <button type="button" class="advanced" data-act="avoid" data-status="1">Avoid</button>
+          <button type="button" class="advanced" data-act="avoid" data-status="3">Unavoid</button>
         </div>
       </section>
 
-      <section class="pad">
+      <section class="pad advanced">
         <div class="keys">
           <button type="button" data-key="F">Func</button>
           <button type="button" data-key="M">Menu</button>
@@ -103,19 +106,19 @@
       </section>
     </main>
 
-    <nav class="tabs" role="tablist">
+    <nav class="tabs advanced" role="tablist">
       <button type="button" class="on" data-tab="lists">Lists</button>
       <button type="button" data-tab="qk">Quick keys</button>
       <button type="button" data-tab="menu">Menu</button>
       <button type="button" data-tab="more">More</button>
     </nav>
 
-    <section id="panel-lists" class="panel on">
+    <section id="panel-lists" class="panel advanced on">
       <div id="crumbs" class="crumbs"></div>
       <div id="list" class="list"></div>
     </section>
 
-    <section id="panel-qk" class="panel">
+    <section id="panel-qk" class="panel advanced">
       <div class="row">
         <button type="button" id="qk-load">Load FQK</button>
         <span class="hint">0 missing · 1 off · 2 on. Tap to toggle existing keys.</span>
@@ -123,7 +126,7 @@
       <div id="qk" class="qk"></div>
     </section>
 
-    <section id="panel-menu" class="panel">
+    <section id="panel-menu" class="panel advanced">
       <div class="row">
         <button type="button" id="menu-top">Open menu</button>
         <button type="button" id="menu-back">Back</button>
@@ -138,7 +141,7 @@
       <p id="menu-error" class="error"></p>
     </section>
 
-    <section id="panel-more" class="panel">
+    <section id="panel-more" class="panel advanced">
       <h2>Mode jumps</h2>
       <div class="modes">
         <button type="button" data-jpm="SCN_MODE">Scan</button>
@@ -165,6 +168,13 @@
       </form>
       <div id="more-list" class="list"></div>
     </section>
+
+    <footer class="ui-mode">
+      <label>
+        <input id="advanced-controls" type="checkbox" />
+        Advanced Controls
+      </label>
+    </footer>
 
     <div id="popup" class="popup hidden">
       <div class="popup-card">

@@ -1,0 +1,52 @@
+# Deploy in Portainer as a Compose stack on Docker Standalone (not a Swarm stack).
+# Uses published host ports (shown in Portainer). Host networking is not used here
+# so MediaMTX pulls the scanner with RTSP interleaved TCP.
+#
+# Paste this file into Stacks → Add stack → Web editor.
+# Set environment variables from portainer-stack.env.example.
+#
+# Do not expose ScanHead or the scanner's UDP/RTSP ports on the public Internet.
+# Do not run Siren, ProScan, or RH-536HP at the same time.
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1}
+    container_name: scanhead-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
+    environment:
+      MTX_RTMP: "no"
+      MTX_SRT: "no"
+      MTX_RTSP: "no"
+      MTX_HLS: "yes"
+      MTX_WEBRTC: "yes"
+      MTX_HLSADDRESS: ":8888"
+      MTX_WEBRTCADDRESS: ":8889"
+      MTX_WEBRTCENCRYPTION: "no"
+      MTX_WEBRTCLOCALUDPADDRESS: ":8189"
+      MTX_WEBRTCIPSFROMINTERFACES: "no"
+      MTX_WEBRTCADDITIONALHOSTS: "${WEBRTC_HOST}"
+      MTX_PATHDEFAULTS_SOURCEONDEMAND: "no"
+      MTX_PATHDEFAULTS_RTSPANYPORT: "yes"
+      MTX_PATHDEFAULTS_RTSPTRANSPORT: tcp
+      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_IP}/au:scanner.au
+      MTX_PATHS_SCANNER_RTSPTRANSPORT: tcp
+
+  app:
+    image: ${DOCKER_HUB_REGISTRY_USERNAME:-derpmhichurp}/${DOCKER_HUB_IMAGE_NAME:-scanhead}:${IMAGE_TAG:-latest}
+    container_name: scanhead-app
+    restart: unless-stopped
+    depends_on:
+      - mediamtx
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      SCANNER_IP: ${SCANNER_IP}
+      SCANNER_PORT: ${SCANNER_PORT:-50536}
+      APP_PORT: "8080"
+      PSI_INTERVAL_MS: ${PSI_INTERVAL_MS:-500}
+      MEDIAMTX_WHEP_PORT: ${MEDIAMTX_WHEP_PORT:-8889}
+      MEDIAMTX_HLS_PORT: ${MEDIAMTX_HLS_PORT:-8888}

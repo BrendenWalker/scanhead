@@ -40,6 +40,13 @@ def _target(body: TargetBody | None) -> protocol.Target | None:
     return protocol.Target(body.tkw, body.xxx1, body.xxx2)
 
 
+def _require_target(body: TargetBody | None) -> protocol.Target:
+    target = _target(body)
+    if target is None:
+        raise HTTPException(status_code=400, detail="target required from displayed channel")
+    return target
+
+
 def create_app(settings: Settings | None = None, radio: Radio | None = None) -> FastAPI:
     settings = settings or load_settings()
     radio = radio or Radio(
@@ -157,7 +164,7 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
     @app.post("/api/hold")
     async def hold(body: TargetBody | None = None):
         try:
-            return {"fields": await radio.hold(_target(body))}
+            return {"fields": await radio.hold(_require_target(body))}
         except RadioError as exc:
             raise _http_error(exc) from exc
 
@@ -165,7 +172,7 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
     async def nxt(body: TargetBody | None = None):
         try:
             count = body.count if body else 1
-            return {"fields": await radio.next(_target(body), count)}
+            return {"fields": await radio.next(_require_target(body), count)}
         except RadioError as exc:
             raise _http_error(exc) from exc
 
@@ -173,7 +180,7 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
     async def prv(body: TargetBody | None = None):
         try:
             count = body.count if body else 1
-            return {"fields": await radio.prev(_target(body), count)}
+            return {"fields": await radio.prev(_require_target(body), count)}
         except RadioError as exc:
             raise _http_error(exc) from exc
 
@@ -182,7 +189,7 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
         if body.status is None:
             raise HTTPException(status_code=400, detail="status 1=permanent 2=temporary 3=stop")
         try:
-            return {"fields": await radio.avoid(body.status, _target(body))}
+            return {"fields": await radio.avoid(body.status, _require_target(body))}
         except RadioError as exc:
             raise _http_error(exc) from exc
 
