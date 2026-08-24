@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>ScanHead</title>
+    <link rel="stylesheet" href="/static/css/app.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <span class="logo">ScanHead</span>
+        <span id="model" class="meta">connecting…</span>
+      </div>
+      <div class="top-actions">
+        <span id="link" class="pill off">UDP</span>
+        <button id="play" type="button" class="play">Play audio</button>
+        <span id="audio-state" class="meta">idle</span>
+      </div>
+    </header>
+
+    <audio id="audio" autoplay playsinline></audio>
+
+    <main class="shell">
+      <section class="radio">
+        <div id="display" class="display">
+          <div class="display-top">
+            <span id="mode">—</span>
+            <span id="p25" class="badge">—</span>
+            <span id="mute" class="badge">—</span>
+          </div>
+            <div id="overwrite" class="overwrite"></div>
+          <div id="channel-name" class="channel">Listening…</div>
+          <div class="freq-row">
+            <span id="freq" class="freq">—</span>
+            <span id="mod" class="mod"></span>
+          </div>
+          <dl class="stack">
+            <div><dt>TGID</dt><dd id="tgid">—</dd></div>
+            <div><dt>System</dt><dd id="sys">—</dd></div>
+            <div><dt>Department</dt><dd id="dept">—</dd></div>
+            <div><dt>Site</dt><dd id="site">—</dd></div>
+            <div><dt>Service</dt><dd id="svc">—</dd></div>
+            <div><dt>Unit</dt><dd id="uid">—</dd></div>
+          </dl>
+          <div class="meters">
+            <div>
+              <span>Sig</span>
+              <div id="sig" class="bars" data-n="0"></div>
+            </div>
+            <div>
+              <span>RSSI</span>
+              <meter id="rssi" min="0" max="5" value="0"></meter>
+            </div>
+            <div id="info-lines" class="info-lines"></div>
+          </div>
+        </div>
+
+        <div class="sliders">
+          <label>Vol <input id="vol" type="range" min="0" max="29" value="0" /><output id="vol-out">0</output></label>
+          <label>Sql <input id="sql" type="range" min="0" max="19" value="0" /><output id="sql-out">0</output></label>
+        </div>
+
+        <div class="actions">
+          <button type="button" data-act="hold">Hold</button>
+          <button type="button" data-act="prev">Prev</button>
+          <button type="button" data-act="next">Skip</button>
+          <button type="button" data-act="avoid" data-status="2">Temp avoid</button>
+          <button type="button" data-act="avoid" data-status="1">Avoid</button>
+          <button type="button" data-act="avoid" data-status="3">Unavoid</button>
+        </div>
+      </section>
+
+      <section class="pad">
+        <div class="keys">
+          <button type="button" data-key="F">Func</button>
+          <button type="button" data-key="M">Menu</button>
+          <button type="button" data-key="Z">Zip</button>
+          <button type="button" data-key="1">1</button>
+          <button type="button" data-key="2">2</button>
+          <button type="button" data-key="3">3</button>
+          <button type="button" data-key="4">4</button>
+          <button type="button" data-key="5">5</button>
+          <button type="button" data-key="6">6</button>
+          <button type="button" data-key="7">7</button>
+          <button type="button" data-key="8">8</button>
+          <button type="button" data-key="9">9</button>
+          <button type="button" data-key=".">.</button>
+          <button type="button" data-key="0">0</button>
+          <button type="button" data-key="E" class="yes">Yes</button>
+          <button type="button" data-key="A">Sys</button>
+          <button type="button" data-key="B">Dept</button>
+          <button type="button" data-key="C">Chan</button>
+          <button type="button" data-key="L">Avoid</button>
+          <button type="button" data-key="Y">Replay</button>
+          <button type="button" data-key="T">Svc</button>
+          <button type="button" data-key="R">Range</button>
+          <button type="button" data-key="<">&lt;</button>
+          <button type="button" data-key="^">Push</button>
+          <button type="button" data-key=">">&gt;</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" class="on" data-tab="lists">Lists</button>
+      <button type="button" data-tab="qk">Quick keys</button>
+      <button type="button" data-tab="menu">Menu</button>
+      <button type="button" data-tab="more">More</button>
+    </nav>
+
+    <section id="panel-lists" class="panel on">
+      <div id="crumbs" class="crumbs"></div>
+      <div id="list" class="list"></div>
+    </section>
+
+    <section id="panel-qk" class="panel">
+      <div class="row">
+        <button type="button" id="qk-load">Load FQK</button>
+        <span class="hint">0 missing · 1 off · 2 on. Tap to toggle existing keys.</span>
+      </div>
+      <div id="qk" class="qk"></div>
+    </section>
+
+    <section id="panel-menu" class="panel">
+      <div class="row">
+        <button type="button" id="menu-top">Open menu</button>
+        <button type="button" id="menu-back">Back</button>
+        <button type="button" id="menu-exit">Exit</button>
+      </div>
+      <h2 id="menu-title">Menu</h2>
+      <div id="menu-items" class="list"></div>
+      <form id="menu-form" class="menu-form hidden">
+        <input id="menu-input" type="text" />
+        <button type="submit">Set</button>
+      </form>
+      <p id="menu-error" class="error"></p>
+    </section>
+
+    <section id="panel-more" class="panel">
+      <h2>Mode jumps</h2>
+      <div class="modes">
+        <button type="button" data-jpm="SCN_MODE">Scan</button>
+        <button type="button" data-jpm="CC_MODE">Close Call</button>
+        <button type="button" data-jpm="WX_MODE" data-index="NORMAL">Weather</button>
+        <button type="button" data-jpm="FTO_MODE">Tone-out</button>
+        <button type="button" data-jpm="IREC_MODE">Replay</button>
+        <button type="button" data-jpm="TDIS_MODE">Trunk discovery</button>
+        <button type="button" data-jpm="CDIS_MODE">Conv discovery</button>
+      </div>
+      <h2>Recording</h2>
+      <div class="row">
+        <button type="button" id="rec-start">Start user record</button>
+        <button type="button" id="rec-stop">Stop</button>
+        <button type="button" id="rec-files">Inner replay files</button>
+      </div>
+      <h2>Location / clock</h2>
+      <p id="clock" class="meta"></p>
+      <form id="loc-form" class="loc-form">
+        <label>Lat <input name="latitude" required /></label>
+        <label>Lon <input name="longitude" required /></label>
+        <label>Range <input name="range" required /></label>
+        <button type="submit">Set location</button>
+      </form>
+      <div id="more-list" class="list"></div>
+    </section>
+
+    <div id="popup" class="popup hidden">
+      <div class="popup-card">
+        <p id="popup-text"></p>
+        <div class="row">
+          <button type="button" data-key="E" class="yes">Yes</button>
+          <button type="button" data-key=".">No</button>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="/static/js/reader.js"></script>
+    <script defer src="/static/js/app.js"></script>
+  </body>
+</html>

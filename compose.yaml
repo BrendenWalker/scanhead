@@ -1,0 +1,34 @@
+name: scanhead
+
+# Host networking is required on Linux. The scanner's RTP uses dynamic UDP
+# ports; Docker bridge NAT commonly breaks that. MediaMTX can fall back to
+# RTSP interleaved TCP (rtspTransport: tcp in mediamtx.yml) if needed.
+#
+#   SCANNER_IP=192.168.x.x docker compose up --build
+#
+# Do not run Siren, ProScan, or RH-536HP at the same time. ScanHead is the
+# only PSI subscriber and the only RTSP client of the scanner.
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    environment:
+      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_IP:?set SCANNER_IP in .env}/au:scanner.au
+
+  app:
+    build: ./app
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - mediamtx
+    environment:
+      SCANNER_IP: ${SCANNER_IP:?set SCANNER_IP in .env}
+      SCANNER_PORT: ${SCANNER_PORT:-50536}
+      APP_PORT: ${APP_PORT:-8080}
+      PSI_INTERVAL_MS: ${PSI_INTERVAL_MS:-500}
+      MEDIAMTX_WHEP_PORT: ${MEDIAMTX_WHEP_PORT:-8889}
+      MEDIAMTX_HLS_PORT: ${MEDIAMTX_HLS_PORT:-8888}

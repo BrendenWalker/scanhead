@@ -11,7 +11,7 @@ Audio and control are separate paths:
 
 The scanner’s remote-control and audio interfaces do not provide authentication. ScanHead is designed for **trusted LAN deployments** and should not be exposed directly to the Internet. “LAN-only” here is a deployment assumption, not a claim that the app refuses WAN access.
 
-**Status:** planning. The design is in [docs/PLAN.md](docs/PLAN.md). Runtime code is not in this repository yet.
+**Status:** v1 runtime. Design notes remain in [docs/PLAN.md](docs/PLAN.md). Command reference: [docs/protocol.md](docs/protocol.md).
 
 ## Scanner support (v1)
 
@@ -29,19 +29,51 @@ Handhelds share the command family but have no native RTSP for ScanHead to proxy
 
 **Out of scope:** HomePatrol-1/2, BCD996P2 / BCD325P2 / XT and other Bearcats, analog-only Uniden, Whistler — different interfaces and protocols.
 
-## How it will work
+## Run (Linux Docker host on the scanner LAN)
 
-The scanner already exposes digital audio over the network as G.711 µ-law RTSP:
+Host networking is required. The scanner’s RTP uses dynamic UDP ports; Docker bridge NAT commonly breaks that.
 
-```text
-rtsp://<scanner-ip>/au:scanner.au
+```bash
+cp .env.example .env
+# set SCANNER_IP to the scanner’s reserved address
+docker compose up --build
 ```
 
-Browsers cannot play RTSP, so ScanHead will pull that stream once (the scanner typically allows a single RTSP client) and republish it as WebRTC.
+Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8889 (WHEP `/scanner/whep`). Do not run Siren, ProScan, or RH-536HP at the same time.
 
-Control uses Uniden’s published ASCII/XML remote-command protocol on **UDP port 50536** — the same family used by HomePatrol/SDS scanners (`KEY`, `GLT`, `MNU`, `GSI`, `PSI`, and related commands). ScanHead uses `MDL` to identify the connected model and adapt the UI.
+If RTSP UDP still fails, set `rtspTransport: tcp` in `mediamtx.yml` (interleaved TCP fallback).
 
-See [docs/PLAN.md](docs/PLAN.md) for architecture, protocol notes, UI scope, and delivery phases.
+Published app images are on Docker Hub as `derpmhichurp/scanhead`. Compose still builds locally by default; to pull instead, set the `app` service image to a published tag.
+
+| Git tag | Docker tags |
+|---|---|
+| `scanhead/1.0.0` on `main` | `1.0.0`, `latest` |
+| `scanhead/1.0.0-beta.1` on `main` | `1.0.0-beta.1` only |
+| `scanhead/<version>` on any other branch | `{version}`, `beta` |
+
+```bash
+git tag scanhead/1.0.0
+git push origin scanhead/1.0.0
+```
+
+### App-only (control UI without Compose)
+
+Useful on Windows, or when MediaMTX already runs elsewhere:
+
+```bash
+cd app
+python -m venv .venv
+.venv/Scripts/activate   # Windows
+pip install -r requirements-dev.txt
+set SCANNER_IP=scanner.plud.org
+python -m uvicorn scanhead.main:app --factory --host 0.0.0.0 --port 8080
+```
+
+```bash
+cd app
+python -m pytest
+SCANHEAD_LIVE=1 python -m pytest tests/test_live.py
+```
 
 ## Security
 

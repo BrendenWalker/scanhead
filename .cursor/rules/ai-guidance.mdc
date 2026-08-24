@@ -1,0 +1,13 @@
+---
+description: Pointers to ai/ instruction files (Windows local dev, TDD)
+alwaysApply: true
+---
+
+# ScanHead AI guidance
+
+Read [`AGENTS.md`](../../AGENTS.md) for when to open files under [`ai/`](../../ai/README.md).
+
+For running or debugging ScanHead on a Windows workstation (uvicorn, port 8080, PowerShell, PSI, live BCD536HP), read [`ai/windows_local_dev.md`](../../ai/windows_local_dev.md) before giving start/stop commands.
+
+TDD is the default. Before adding a feature, fixing a bug, or writing tests, read [`ai/tdd.md`](../../ai/tdd.md). Write a failing pytest first; do not implement and “add tests later.”
+

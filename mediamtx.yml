@@ -1,0 +1,39 @@
+# ScanHead MediaMTX config. The scanner path source is overridden at runtime
+# by MTX_PATHS_SCANNER_SOURCE (compose sets rtsp://$SCANNER_IP/au:scanner.au).
+#
+# Uniden SDS200 RTSP SSRC quirks were fixed in MediaMTX v0.20.1+; use image tag 1.
+# Uniden RTP uses dynamic UDP ports — run with host networking on Linux.
+# If the dongle accepts interleaved TCP, set rtspTransport: tcp as a fallback.
+
+logLevel: info
+logDestinations: [stdout]
+
+rtmp: false
+srt: false
+rtsp: false
+hls: true
+webrtc: true
+
+hlsAddress: :8888
+hlsAllowOrigins: ["*"]
+hlsTrustedProxies: []
+
+webrtcAddress: :8889
+webrtcEncryption: false
+webrtcAllowOrigins: ["*"]
+webrtcTrustedProxies: []
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: true
+webrtcAdditionalHosts: []
+
+pathDefaults:
+  # Pull continuously so Play is instant. ScanHead is the sole RTSP client.
+  sourceOnDemand: false
+  # Uniden often omits / randomizes server ports.
+  rtspAnyPort: true
+  # automatic = UDP first; set tcp if host networking is unavailable.
+  rtspTransport: automatic
+
+paths:
+  scanner:
+    source: rtsp://127.0.0.1/au:scanner.au
