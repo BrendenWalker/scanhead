@@ -9,6 +9,7 @@
     volTimer: 0,
     sqlTimer: 0,
     lastStatusAt: 0,
+    displayed: null,
   };
 
   async function api(path, opts) {
@@ -78,6 +79,7 @@
   }
 
   function renderStatus(s) {
+    state.displayed = s;
     const prop = s.property || {};
     const listen = composeListen(s);
     const display = $("display");
@@ -114,6 +116,12 @@
     const hasPopup = popup && typeof popup === "object" && Object.keys(popup).length;
     $("popup").classList.toggle("hidden", !hasPopup);
     if (hasPopup) $("popup-text").textContent = popup.Text || popup.Name || "Confirm";
+  }
+
+  function displayedChannelBody(extra) {
+    const t = state.displayed && state.displayed.target;
+    if (!t || !t.tkw) throw new Error("no displayed channel");
+    return { tkw: t.tkw, xxx1: t.xxx1 || "", xxx2: t.xxx2 || "", ...extra };
   }
 
   function connectWs() {
@@ -282,6 +290,10 @@
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.id === `panel-${name}`));
   }
 
+  function setAdvanced(on) {
+    document.body.classList.toggle("advanced-on", on);
+  }
+
   async function init() {
     $("sig").innerHTML = "<span></span><span></span><span></span><span></span><span></span>";
     try {
@@ -322,14 +334,16 @@
     }
 
     $("play").onclick = playAudio;
+    $("advanced-controls").onchange = (e) => setAdvanced(e.target.checked);
+    setAdvanced($("advanced-controls").checked);
     $("vol").oninput = (e) => debounceLevel("vol", e.target.value);
     $("sql").oninput = (e) => debounceLevel("sql", e.target.value);
     document.querySelector(".actions").addEventListener("click", async (e) => {
       const btn = e.target.closest("button");
       if (!btn) return;
       const act = btn.dataset.act;
-      if (act === "avoid") await api("/api/avoid", { method: "POST", body: JSON.stringify({ status: Number(btn.dataset.status) }) });
-      else await api(`/api/${act}`, { method: "POST", body: "{}" });
+      const extra = act === "avoid" ? { status: Number(btn.dataset.status) } : {};
+      await api(`/api/${act}`, { method: "POST", body: JSON.stringify(displayedChannelBody(extra)) });
     });
     document.body.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-key]");

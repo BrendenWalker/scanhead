@@ -170,6 +170,7 @@ class Radio:
             root = parse_xml(frame.xml)
             status = flatten_scanner_info(root)
             status["source"] = "PSI"
+            protocol.attach_target(status)
             self._last_psi = time.monotonic()
             self._broadcast(status)
         except Exception:
@@ -261,6 +262,7 @@ class Radio:
         root = parse_xml(frame.xml) if frame.is_xml else parse_xml(frame.raw)
         status = flatten_scanner_info(root)
         status["source"] = "GSI"
+        protocol.attach_target(status)
         self._broadcast(status)
         return status
 

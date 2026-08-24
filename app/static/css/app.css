@@ -17,6 +17,11 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 button, input, meter { font: inherit; }
 button {
   background: var(--key);
@@ -30,6 +35,9 @@ button {
 button:active { transform: translateY(1px); }
 button.yes { background: #1d3b2a; border-color: #2f6a48; }
 .hidden { display: none !important; }
+body:not(.advanced-on) .advanced { display: none !important; }
+body:not(.advanced-on) .shell { grid-template-columns: 1fr; }
+body:not(.advanced-on) .display { min-height: 0; }
 
 .top {
   display: flex;
@@ -80,6 +88,14 @@ audio { display: none; }
 .display-top { display: flex; gap: 0.5rem; align-items: center; color: var(--muted); font-size: 0.85rem; }
 .badge { border: 1px solid #345c2e; border-radius: 999px; padding: 0.1rem 0.5rem; }
 .overwrite { color: var(--amber); min-height: 1.2em; margin-top: 0.4rem; }
+.overwrite:empty { display: none; min-height: 0; margin: 0; }
+.dept-line {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0;
+}
+.dept-line .label { color: var(--muted); }
 .channel { font-size: 1.35rem; margin: 0.4rem 0; }
 .display.scanning .channel { color: var(--muted); font-size: 1.1rem; }
 .display.landed { border-color: var(--lcd); }
@@ -151,6 +167,19 @@ audio { display: none; }
   min-width: 8rem;
 }
 .error { color: var(--danger); }
+.ui-mode {
+  margin-top: auto;
+  padding: 0.85rem 1rem 1.2rem;
+  border-top: 1px solid var(--line);
+}
+.ui-mode label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  width: fit-content;
+}
 .popup {
   position: fixed;
   inset: 0;

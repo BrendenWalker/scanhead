@@ -75,15 +75,42 @@ def test_hold_next_prev_avoid():
         nxt = [call for call in radio.calls if call[0] == "next"][-1]
         assert nxt[2] == 2
 
-        assert client.post("/api/prev", json={}).status_code == 200
+        assert client.post("/api/prev", json={"tkw": "SYS", "xxx1": "1"}).status_code == 200
 
         missing = client.post("/api/avoid", json={"tkw": "SYS", "xxx1": "1"})
         assert missing.status_code == 400
+
+        no_target = client.post("/api/hold", json={})
+        assert no_target.status_code == 400
+        assert "target" in no_target.json()["detail"].lower()
 
         ok = client.post("/api/avoid", json={"tkw": "SYS", "xxx1": "1", "status": 2})
         assert ok.status_code == 200
         avoid = [call for call in radio.calls if call[0] == "avoid"][-1]
         assert avoid[1] == 2
+
+
+def test_channel_actions_use_posted_target_not_radio_status():
+    radio = FakeRadio()
+    radio.status = {
+        "channelTag": "TGID",
+        "channel": {"Index": "91712"},
+        "department": {"Index": "91602"},
+        "target": {"tkw": "TGID", "xxx1": "91712", "xxx2": "91602"},
+    }
+    displayed = {"tkw": "CFREQ", "xxx1": "25535", "xxx2": ""}
+    with _client(radio)[0] as client:
+        assert client.post("/api/hold", json=displayed).status_code == 200
+        assert client.post("/api/next", json=displayed).status_code == 200
+        assert client.post("/api/prev", json=displayed).status_code == 200
+        assert client.post("/api/avoid", json={**displayed, "status": 2}).status_code == 200
+        assert [call for call in radio.calls if call[0] == "hold"][-1][1] == Target("CFREQ", "25535", "")
+        assert [call for call in radio.calls if call[0] == "next"][-1][1] == Target("CFREQ", "25535", "")
+        assert [call for call in radio.calls if call[0] == "prev"][-1][1] == Target("CFREQ", "25535", "")
+        assert [call for call in radio.calls if call[0] == "avoid"][-1][2] == Target("CFREQ", "25535", "")
+        for act in ("hold", "next", "prev"):
+            assert client.post(f"/api/{act}", json={}).status_code == 400
+        assert client.post("/api/avoid", json={"status": 2}).status_code == 400
 
 
 def test_lists_quick_keys_and_jumps():

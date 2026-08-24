@@ -199,6 +199,13 @@ def target_from_status(status: dict) -> Target | None:
     return None
 
 
+def attach_target(status: dict) -> dict:
+    """Freeze HLD/NXT/PRV/AVD handles onto this snapshot so later PSI cannot retarget it."""
+    target = target_from_status(status)
+    status["target"] = None if target is None else {"tkw": target.tkw, "xxx1": target.xxx1, "xxx2": target.xxx2}
+    return status
+
+
 def _freq_hz(freq: str) -> str:
     digits = "".join(ch for ch in freq if ch.isdigit())
     return digits
