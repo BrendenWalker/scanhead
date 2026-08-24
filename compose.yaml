@@ -4,14 +4,19 @@ name: scanhead
 # ports; Docker bridge NAT commonly breaks that. MediaMTX can fall back to
 # RTSP interleaved TCP (rtspTransport: tcp in mediamtx.yml) if needed.
 #
+# Local build:
 #   SCANNER_IP=192.168.x.x docker compose up --build
+#
+# Published image (see portainer-stack.yml for Portainer):
+#   IMAGE_TAG=latest docker compose pull
+#   SCANNER_IP=192.168.x.x docker compose up -d
 #
 # Do not run Siren, ProScan, or RH-536HP at the same time. ScanHead is the
 # only PSI subscriber and the only RTSP client of the scanner.
 
 services:
   mediamtx:
-    image: bluenviron/mediamtx:1
+    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1}
     network_mode: host
     restart: unless-stopped
     volumes:
@@ -20,6 +25,7 @@ services:
       MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_IP:?set SCANNER_IP in .env}/au:scanner.au
 
   app:
+    image: ${DOCKER_HUB_REGISTRY_USERNAME:-derpmhichurp}/${DOCKER_HUB_IMAGE_NAME:-scanhead}:${IMAGE_TAG:-latest}
     build: ./app
     network_mode: host
     restart: unless-stopped
