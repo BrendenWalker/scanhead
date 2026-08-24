@@ -19,7 +19,10 @@
         <span id="audio-state" class="meta">idle</span>
       </div>
     </header>
-    <p class="client-links">VLC: <code id="client-rtsp"></code></p>
+    <div class="client-links">
+      <p>VLC: <code id="client-rtsp"></code></p>
+      <p>MPlayer: <code id="client-mplayer"></code></p>
+    </div>
 
     <audio id="audio" autoplay playsinline></audio>
 
@@ -175,6 +178,7 @@
         <input id="advanced-controls" type="checkbox" />
         Advanced Controls
       </label>
+      <p id="app-version" class="meta"></p>
     </footer>
 
     <div id="popup" class="popup hidden">

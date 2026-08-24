@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from scanhead import __version__
 from scanhead.config import Settings
 from scanhead.main import create_app
 from scanhead.protocol import Target
@@ -32,6 +33,7 @@ def test_health_and_config():
         assert data["whepUrl"].endswith(":8889/scanner/whep")
         assert data["hlsUrl"].endswith(":8888/scanner/index.m3u8")
         assert data["rtspUrl"].endswith(":8554/scanner")
+        assert data["appVersion"] == __version__
         assert "SCN_MODE" in data["jumpModes"]
         assert "TOP" in data["menuIds"]
 

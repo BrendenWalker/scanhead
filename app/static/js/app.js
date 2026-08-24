@@ -302,6 +302,8 @@
       $("vol").max = state.config.volMax;
       $("sql").max = state.config.sqlMax;
       $("client-rtsp").textContent = state.config.rtspUrl || "";
+      $("client-mplayer").textContent = state.config.rtspUrl || "";
+      $("app-version").textContent = state.config.appVersion ? `ScanHead ${state.config.appVersion}` : "";
     } catch (err) {
       $("model").textContent = err.message;
     }

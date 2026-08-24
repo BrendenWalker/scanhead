@@ -115,3 +115,11 @@ def test_portainer_stack_pulls_published_image():
     assert "IMAGE_TAG=latest" in env
     assert "WEBRTC_HOST" in env
     assert "MEDIAMTX_TAG=1-ffmpeg" in env
+
+
+def test_docker_image_bakes_scanhead_version():
+    dockerfile = (ROOT / "app" / "Dockerfile").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "docker-build.yml").read_text(encoding="utf-8")
+    assert "ARG SCANHEAD_VERSION" in dockerfile
+    assert "ENV SCANHEAD_VERSION" in dockerfile
+    assert "SCANHEAD_VERSION" in workflow

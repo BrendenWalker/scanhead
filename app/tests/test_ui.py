@@ -100,6 +100,7 @@ def test_header_play_and_normal_listen_are_visible_by_default():
     root = _parse()
     assert not _in_advanced(_by_id(root, "play"))
     assert not _in_advanced(_by_id(root, "client-rtsp"))
+    assert not _in_advanced(_by_id(root, "client-mplayer"))
     assert not _in_advanced(_by_id(root, "channel-name"))
     assert not _in_advanced(_by_id(root, "dept"))
     hold = _button_by_text(root, "Hold")
@@ -128,7 +129,10 @@ def test_advanced_controls_are_marked_and_hidden_by_css():
 
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
     assert "client-rtsp" in js
+    assert "client-mplayer" in js
     assert "rtspUrl" in js
+    assert "appVersion" in js
+    assert "app-version" in js
     assert "advanced-controls" in js
     assert "advanced-on" in js
 
@@ -155,6 +159,20 @@ def test_display_box_size_ignores_text_content():
     assert "white-space: nowrap" in css
     assert "body:not(.advanced-on) .overwrite:empty" in css
     assert "min-width: 0" in css
+
+
+def test_mplayer_url_renders_below_vlc():
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert html.find("VLC:") < html.find("MPlayer:")
+    assert html.find('id="client-rtsp"') < html.find('id="client-mplayer"')
+
+
+def test_app_version_is_at_page_bottom():
+    root = _parse()
+    ver = _by_id(root, "app-version")
+    assert not _in_advanced(ver)
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert html.rfind("id=\"app-version\"") > html.rfind("advanced-controls")
 
 
 def test_action_buttons_send_displayed_channel_target():
