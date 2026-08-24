@@ -143,6 +143,17 @@ def test_normal_display_has_no_min_height():
     assert "min-height: 0" in css
 
 
+def test_display_box_size_ignores_text_content():
+    css = (STATIC / "css" / "app.css").read_text(encoding="utf-8")
+    collapsed = " ".join(css.split())
+    assert ".display.landed { border-color" not in collapsed
+    assert "font-size: 1.1rem" not in css
+    assert "text-overflow: ellipsis" in css
+    assert "white-space: nowrap" in css
+    assert "body:not(.advanced-on) .overwrite:empty" in css
+    assert "min-width: 0" in css
+
+
 def test_action_buttons_send_displayed_channel_target():
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
     assert "state.displayed" in js
