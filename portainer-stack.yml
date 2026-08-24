@@ -11,7 +11,7 @@
 
 services:
   mediamtx:
-    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1}
+    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1-ffmpeg}
     container_name: scanhead-mediamtx
     restart: unless-stopped
     ports:
@@ -35,7 +35,10 @@ services:
       MTX_PATHDEFAULTS_SOURCEONDEMAND: "no"
       MTX_PATHDEFAULTS_RTSPANYPORT: "yes"
       MTX_PATHDEFAULTS_RTSPTRANSPORT: udp
-      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP}}/au:scanner.au
+      MTX_PATHS_RAW_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP}}/au:scanner.au
+      MTX_PATHS_RAW_RUNONAVAILABLE: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=200,agate=threshold=0.03:ratio=10:attack=5:release=150:range=0.002,acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4 -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
+      MTX_PATHS_RAW_RUNONAVAILABLERESTART: "yes"
+      MTX_PATHS_SCANNER_SOURCE: publisher
 
   app:
     image: ${DOCKER_HUB_REGISTRY_USERNAME:-derpmhichurp}/${DOCKER_HUB_IMAGE_NAME:-scanhead}:${IMAGE_TAG:-latest}

@@ -16,14 +16,14 @@ name: scanhead
 
 services:
   mediamtx:
-    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1}
+    image: bluenviron/mediamtx:${MEDIAMTX_TAG:-1-ffmpeg}
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
     environment:
       # Uniden OPTIONS 400s if the URL host is a DNS name; use a dotted-quad.
-      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP:?set SCANNER_IP in .env}}/au:scanner.au
+      MTX_PATHS_RAW_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP:?set SCANNER_IP in .env}}/au:scanner.au
 
   app:
     image: ${DOCKER_HUB_REGISTRY_USERNAME:-derpmhichurp}/${DOCKER_HUB_IMAGE_NAME:-scanhead}:${IMAGE_TAG:-latest}
