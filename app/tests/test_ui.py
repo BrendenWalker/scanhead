@@ -99,6 +99,7 @@ def test_advanced_checkbox_defaults_off_at_page_bottom():
 def test_header_play_and_normal_listen_are_visible_by_default():
     root = _parse()
     assert not _in_advanced(_by_id(root, "play"))
+    assert not _in_advanced(_by_id(root, "client-rtsp"))
     assert not _in_advanced(_by_id(root, "channel-name"))
     assert not _in_advanced(_by_id(root, "dept"))
     hold = _button_by_text(root, "Hold")
@@ -126,6 +127,8 @@ def test_advanced_controls_are_marked_and_hidden_by_css():
     assert "display: none" in css
 
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
+    assert "client-rtsp" in js
+    assert "rtspUrl" in js
     assert "advanced-controls" in js
     assert "advanced-on" in js
 

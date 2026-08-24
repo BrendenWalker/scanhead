@@ -21,6 +21,7 @@ def test_load_settings_defaults(monkeypatch):
     assert settings.psi_interval_ms == 500
     assert settings.mediamtx_whep_port == 8889
     assert settings.mediamtx_hls_port == 8888
+    assert settings.mediamtx_rtsp_port == 8554
 
 
 def test_load_settings_overrides(monkeypatch):

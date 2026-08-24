@@ -39,7 +39,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8889 (WHEP `/scanner/whep`). Do not run Siren, ProScan, or RH-536HP at the same time.
+Open `http://<docker-host>:8080`. Play audio uses WebRTC from MediaMTX on port 8889 (WHEP `/scanner/whep`). VLC should use `rtsp://<docker-host>:8554/scanner` (HLS cannot carry G.711). Do not run Siren, ProScan, or RH-536HP at the same time.
 
 If RTSP UDP still fails, set `rtspTransport: tcp` in `mediamtx.yml` (interleaved TCP fallback).
 
@@ -52,11 +52,11 @@ docker compose up -d
 
 ### Portainer (Linux Docker Standalone)
 
-Do not deploy this as a Swarm stack. The Portainer stack **publishes ports** on a bridge network (so they show in Portainer). MediaMTX uses RTSP interleaved TCP to the scanner.
+Do not deploy this as a Swarm stack. The Portainer stack **publishes ports** on a bridge network (so they show in Portainer). MediaMTX pulls the scanner over RTSP UDP; interleaved TCP is not supported and MediaMTX will log `400 Bad Request`.
 
 1. Stacks → Add stack → Web editor; paste [portainer-stack.yml](portainer-stack.yml).
-2. Add environment variables from [portainer-stack.env.example](portainer-stack.env.example). Set `SCANNER_IP` and `WEBRTC_HOST` (the LAN IP or hostname of the Docker host).
-3. Deploy. Portainer should list **8080** on `scanhead-app` and **8888**, **8889**, **8189/udp** on `scanhead-mediamtx`. Open `http://<docker-host>:8080`.
+2. Add environment variables from [portainer-stack.env.example](portainer-stack.env.example). Set `SCANNER_IP`, `SCANNER_RTSP_IP` (dotted-quad, not a DNS name — Uniden RTSP returns 400 on hostnames), and `WEBRTC_HOST` (the LAN IP or hostname of the Docker host).
+3. Deploy. Portainer should list **8080** on `scanhead-app` and **8554**, **8888**, **8889**, **8189/udp** on `scanhead-mediamtx`. Open `http://<docker-host>:8080`.
 
 Published app images are on Docker Hub as `derpmhichurp/scanhead`. Compose still builds locally by default; to pull instead, set `IMAGE_TAG` (and optionally `DOCKER_HUB_REGISTRY_USERNAME` / `DOCKER_HUB_IMAGE_NAME`).
 

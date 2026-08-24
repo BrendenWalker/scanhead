@@ -22,7 +22,8 @@ services:
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
     environment:
-      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_IP:?set SCANNER_IP in .env}/au:scanner.au
+      # Uniden OPTIONS 400s if the URL host is a DNS name; use a dotted-quad.
+      MTX_PATHS_SCANNER_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP:?set SCANNER_IP in .env}}/au:scanner.au
 
   app:
     image: ${DOCKER_HUB_REGISTRY_USERNAME:-derpmhichurp}/${DOCKER_HUB_IMAGE_NAME:-scanhead}:${IMAGE_TAG:-latest}
@@ -38,3 +39,4 @@ services:
       PSI_INTERVAL_MS: ${PSI_INTERVAL_MS:-500}
       MEDIAMTX_WHEP_PORT: ${MEDIAMTX_WHEP_PORT:-8889}
       MEDIAMTX_HLS_PORT: ${MEDIAMTX_HLS_PORT:-8888}
+      MEDIAMTX_RTSP_PORT: ${MEDIAMTX_RTSP_PORT:-8554}

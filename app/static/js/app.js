@@ -301,6 +301,7 @@
       $("model").textContent = `${state.config.model} ${state.config.version}`.trim();
       $("vol").max = state.config.volMax;
       $("sql").max = state.config.sqlMax;
+      $("client-rtsp").textContent = state.config.rtspUrl || "";
     } catch (err) {
       $("model").textContent = err.message;
     }

@@ -100,6 +100,7 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
             "wxIndexes": protocol.WX_INDEXES,
             "whepUrl": f"{scheme}://{host}:{settings.mediamtx_whep_port}/scanner/whep",
             "hlsUrl": f"{scheme}://{host}:{settings.mediamtx_hls_port}/scanner/index.m3u8",
+            "rtspUrl": f"rtsp://{host}:{settings.mediamtx_rtsp_port}/scanner",
         }
 
     @app.get("/api/status")

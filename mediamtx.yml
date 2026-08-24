@@ -1,5 +1,5 @@
 # ScanHead MediaMTX config. The scanner path source is overridden at runtime
-# by MTX_PATHS_SCANNER_SOURCE (compose sets rtsp://$SCANNER_IP/au:scanner.au).
+# by MTX_PATHS_SCANNER_SOURCE (compose sets rtsp://$SCANNER_RTSP_IP/au:scanner.au).
 #
 # Uniden SDS200 RTSP SSRC quirks were fixed in MediaMTX v0.20.1+; use image tag 1.
 # Uniden RTP uses dynamic UDP ports — run with host networking on Linux.
@@ -10,9 +10,11 @@ logDestinations: [stdout]
 
 rtmp: false
 srt: false
-rtsp: false
+rtsp: true
 hls: true
 webrtc: true
+
+rtspAddress: :8554
 
 hlsAddress: :8888
 hlsAllowOrigins: ["*"]

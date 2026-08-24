@@ -80,7 +80,7 @@ Common `tkw`: `SYS`, `DEPT`, `SITE`, `CFREQ`, `TGID`, `WX`, `FTO`.
 ## Audio
 
 ```text
-rtsp://<scanner-ip>/au:scanner.au
+rtsp://<scanner-dotted-quad>/au:scanner.au
 ```
 
-G.711 µ-law (PCMU) over RTSP/RTP. ScanHead’s MediaMTX process is the sole RTSP client and republishes WebRTC (WHEP `/scanner/whep`) plus HLS.
+Uniden’s RTSP server returns **400** if the URL host is a DNS name (`OPTIONS *` also 400s). Use the radio’s dotted-quad. G.711 µ-law (PCMU) over RTSP/RTP. ScanHead’s MediaMTX process is the sole RTSP client of the radio and republishes WebRTC (WHEP `/scanner/whep`) plus RTSP (`rtsp://<host>:8554/scanner`) for VLC. HLS cannot mux G.711, so `/scanner/index.m3u8` is not usable.
