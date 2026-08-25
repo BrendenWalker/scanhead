@@ -301,8 +301,9 @@
       $("model").textContent = `${state.config.model} ${state.config.version}`.trim();
       $("vol").max = state.config.volMax;
       $("sql").max = state.config.sqlMax;
-      $("client-rtsp").textContent = state.config.rtspUrl || "";
-      $("client-mplayer").textContent = state.config.rtspUrl || "";
+      const listen = state.config.hlsUrl || "";
+      $("client-rtsp").textContent = listen ? `vlc ${listen}` : "";
+      $("client-mplayer").textContent = listen ? `mplayer -nocache -playlist ${listen}` : "";
       $("app-version").textContent = state.config.appVersion ? `ScanHead ${state.config.appVersion}` : "";
     } catch (err) {
       $("model").textContent = err.message;

@@ -130,7 +130,11 @@ def test_advanced_controls_are_marked_and_hidden_by_css():
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
     assert "client-rtsp" in js
     assert "client-mplayer" in js
-    assert "rtspUrl" in js
+    assert "hlsUrl" in js
+    assert "-playlist" in js
+    assert "-nocache" in js
+    assert "--rtsp-tcp" not in js
+    assert "-demuxer lavf" not in js
     assert "appVersion" in js
     assert "app-version" in js
     assert "advanced-controls" in js

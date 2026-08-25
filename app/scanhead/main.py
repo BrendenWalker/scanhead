@@ -99,8 +99,8 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
             "menuIds": protocol.MENU_IDS,
             "wxIndexes": protocol.WX_INDEXES,
             "whepUrl": f"{scheme}://{host}:{settings.mediamtx_whep_port}/scanner/whep",
-            "hlsUrl": f"{scheme}://{host}:{settings.mediamtx_hls_port}/scanner/index.m3u8",
-            "rtspUrl": f"rtsp://{host}:{settings.mediamtx_rtsp_port}/scanner",
+            "hlsUrl": f"{scheme}://{host}:{settings.mediamtx_hls_port}/player/index.m3u8",
+            "rtspUrl": f"rtsp://{host}:{settings.mediamtx_rtsp_port}/player",
             "appVersion": settings.app_version,
         }
 

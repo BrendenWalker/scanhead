@@ -31,7 +31,7 @@ To pull this image instead of building locally, set the app service image to `de
 - `APP_PORT` — HTTP port (default: 8080)
 - `PSI_INTERVAL_MS` — status push interval (default: 500)
 - `MEDIAMTX_WHEP_PORT` — WebRTC/WHEP port (default: 8889)
-- `MEDIAMTX_HLS_PORT` — HLS port (default: 8888; G.711 is not HLS-compatible)
-- `MEDIAMTX_RTSP_PORT` — MediaMTX RTSP republish for VLC (default: 8554)
+- `MEDIAMTX_HLS_PORT` — listen-only HLS for VLC/MPlayer (default: 8888; AAC path `player`)
+- `MEDIAMTX_RTSP_PORT` — MediaMTX RTSP republish (default: 8554)
 
 See the GitHub repository for protocol notes and Windows local-dev instructions.

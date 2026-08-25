@@ -31,8 +31,8 @@ def test_health_and_config():
         assert data["sqlMax"] == 19
         assert data["keys"]["E"] == "Yes / Enter"
         assert data["whepUrl"].endswith(":8889/scanner/whep")
-        assert data["hlsUrl"].endswith(":8888/scanner/index.m3u8")
-        assert data["rtspUrl"].endswith(":8554/scanner")
+        assert data["hlsUrl"].endswith(":8888/player/index.m3u8")
+        assert data["rtspUrl"].endswith(":8554/player")
         assert data["appVersion"] == __version__
         assert "SCN_MODE" in data["jumpModes"]
         assert "TOP" in data["menuIds"]

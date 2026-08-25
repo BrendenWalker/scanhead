@@ -24,7 +24,7 @@ services:
     environment:
       # Uniden OPTIONS 400s if the URL host is a DNS name; use a dotted-quad.
       MTX_PATHS_RAW_SOURCE: rtsp://${SCANNER_RTSP_IP:-${SCANNER_IP:?set SCANNER_IP in .env}}/au:scanner.au
-      MTX_PATHS_RAW_RUNONAVAILABLE: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=${AUDIO_HIGHPASS_HZ:-200},agate=threshold=${AUDIO_GATE_THRESHOLD:-0.01}:ratio=${AUDIO_GATE_RATIO:-10}:attack=${AUDIO_GATE_ATTACK_MS:-5}:release=${AUDIO_GATE_RELEASE_MS:-150}:range=${AUDIO_GATE_RANGE:-0.002},acompressor=threshold=${AUDIO_COMP_THRESHOLD:-0.1}:ratio=${AUDIO_COMP_RATIO:-6}:attack=${AUDIO_COMP_ATTACK_MS:-10}:release=${AUDIO_COMP_RELEASE_MS:-200}:makeup=${AUDIO_COMP_MAKEUP:-4} -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
+      MTX_PATHS_RAW_RUNONAVAILABLE: "ffmpeg -hide_banner -loglevel warning -fflags +genpts -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -filter_complex '[0:a]highpass=f=${AUDIO_HIGHPASS_HZ:-200},agate=threshold=${AUDIO_GATE_THRESHOLD:-0.01}:ratio=${AUDIO_GATE_RATIO:-10}:attack=${AUDIO_GATE_ATTACK_MS:-5}:release=${AUDIO_GATE_RELEASE_MS:-150}:range=${AUDIO_GATE_RANGE:-0.002},acompressor=threshold=${AUDIO_COMP_THRESHOLD:-0.1}:ratio=${AUDIO_COMP_RATIO:-6}:attack=${AUDIO_COMP_ATTACK_MS:-10}:release=${AUDIO_COMP_RELEASE_MS:-200}:makeup=${AUDIO_COMP_MAKEUP:-4},asplit=2[g1][g2];[g1]aresample=8000:async=1,asetnsamples=n=160[pcmu];[g2]aresample=48000:async=1[aac]' -map '[pcmu]' -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner -map '[aac]' -ac 1 -ar 48000 -c:a aac -b:a 64k -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/player"
       MTX_PATHS_RAW_RUNONAVAILABLERESTART: "yes"
 
   app:

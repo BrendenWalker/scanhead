@@ -18,6 +18,11 @@ AUDIO_FILTER_DEFAULT = (
     "agate=threshold=0.01:ratio=10:attack=5:release=150:range=0.002,"
     "acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4"
 )
+# G.711 for WebRTC (8 kHz / 20 ms), AAC 48 kHz for VLC/MPlayer.
+AUDIO_SPLIT = (
+    ",asplit=2[g1][g2];[g1]aresample=8000:async=1,asetnsamples=n=160[pcmu];"
+    "[g2]aresample=48000:async=1[aac]"
+)
 AUDIO_ENV = (
     "AUDIO_HIGHPASS_HZ",
     "AUDIO_GATE_THRESHOLD",
@@ -50,6 +55,8 @@ def test_compose_yaml_builds_locally_with_host_network():
     mtx = (ROOT / "mediamtx.yml").read_text(encoding="utf-8")
     assert "rtsp: true" in mtx
     assert ":8554" in mtx
+    assert "rtspTransports: [tcp]" in mtx
+    assert "hlsVariant: mpegts" in mtx
 
 
 def test_mediamtx_gates_and_compresses_before_scanner_path():
@@ -60,15 +67,24 @@ def test_mediamtx_gates_and_compresses_before_scanner_path():
     assert "runOnAvailable:" in mtx
     assert "runOnAvailableRestart: yes" in mtx
     assert AUDIO_FILTER_DEFAULT in mtx
+    assert AUDIO_SPLIT in mtx
+    assert "filter_complex" in mtx
     assert "ffmpeg" in mtx
     assert "pcm_mulaw" in mtx
+    assert "-c:a aac" in mtx
     assert "rtsp://127.0.0.1:8554/raw" in mtx
     assert "rtsp://127.0.0.1:8554/scanner" in mtx
-    assert "source: publisher" in mtx
+    assert "rtsp://127.0.0.1:8554/player" in mtx
+    assert "\n  player:" in mtx
+    assert mtx.count("source: publisher") >= 2
     assert "dynaudnorm" not in mtx
     assert "loudnorm" not in mtx
     assert "MTX_PATHS_RAW_SOURCE" in compose
     assert AUDIO_FILTER in compose
+    assert AUDIO_SPLIT in compose
+    assert "filter_complex" in compose
+    assert "-c:a aac" in compose
+    assert "rtsp://127.0.0.1:8554/player" in compose
     assert "1-ffmpeg" in env_example
     for name in AUDIO_ENV:
         assert name in env_example, name
@@ -89,6 +105,8 @@ def test_portainer_stack_pulls_published_image():
     assert '"8189:8189/tcp"' not in text
     assert "RTSPTRANSPORT: tcp" not in text
     assert "RTSPTRANSPORT: udp" in text
+    assert "MTX_RTSPTRANSPORTS: tcp" in text
+    assert "MTX_HLSVARIANT: mpegts" in text
     assert 'MTX_RTSP: "yes"' in text
     assert "8554" in text
     assert "DOCKER_HUB_REGISTRY_USERNAME" in text
@@ -101,7 +119,11 @@ def test_portainer_stack_pulls_published_image():
     assert "MTX_PATHS_RAW_RUNONAVAILABLERESTART" in text
     assert AUDIO_FILTER in text
     assert "pcm_mulaw" in text
+    assert AUDIO_SPLIT in text
+    assert "-c:a aac" in text
+    assert "rtsp://127.0.0.1:8554/player" in text
     assert "MTX_PATHS_SCANNER_SOURCE: publisher" in text
+    assert "MTX_PATHS_PLAYER_SOURCE: publisher" in text
     for name in AUDIO_ENV:
         assert name in env, name
         assert f"${{{name}:-" in text, name

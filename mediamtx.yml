@@ -1,7 +1,8 @@
 # ScanHead MediaMTX config. The Uniden pull is path `raw`, overridden at
 # runtime by MTX_PATHS_RAW_SOURCE (compose sets rtsp://$SCANNER_RTSP_IP/au:scanner.au).
 # Compose also overrides runOnAvailable from AUDIO_* env vars; values here are fallbacks.
-# Path `scanner` is the gated/compressed republish used by WHEP and VLC.
+# Path `scanner` is the gated G.711 republish for WHEP. Path `player` is AAC
+# 48 kHz; VLC/MPlayer use HTTP HLS (mpegts), not RTSP.
 #
 # Uniden SDS200 RTSP SSRC quirks were fixed in MediaMTX v0.20.1+; use image tag 1-ffmpeg.
 # Uniden RTP uses dynamic UDP ports — run with host networking on Linux.
@@ -16,9 +17,15 @@ rtsp: true
 hls: true
 webrtc: true
 
+# RTSP readers use interleaved TCP on 8554. UDP RTP needs extra ports
+# (8000/8001) that VLC live555 often cannot reach. Uniden pull still uses
+# pathDefaults.rtspTransport (UDP); this only affects client SETUP.
+rtspTransports: [tcp]
 rtspAddress: :8554
 
 hlsAddress: :8888
+# mpegts HLS is the listen-only feed for VLC and MPlayer (HTTP, no Live555).
+hlsVariant: mpegts
 hlsAllowOrigins: ["*"]
 hlsTrustedProxies: []
 
@@ -42,7 +49,9 @@ paths:
   raw:
     source: rtsp://127.0.0.1/au:scanner.au
     # Gate scan hiss, then compress speech. ffmpeg reads MediaMTX, not the radio.
-    runOnAvailable: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=200,agate=threshold=0.01:ratio=10:attack=5:release=150:range=0.002,acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4 -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
+    runOnAvailable: "ffmpeg -hide_banner -loglevel warning -fflags +genpts -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -filter_complex '[0:a]highpass=f=200,agate=threshold=0.01:ratio=10:attack=5:release=150:range=0.002,acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4,asplit=2[g1][g2];[g1]aresample=8000:async=1,asetnsamples=n=160[pcmu];[g2]aresample=48000:async=1[aac]' -map '[pcmu]' -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner -map '[aac]' -ac 1 -ar 48000 -c:a aac -b:a 64k -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/player"
     runOnAvailableRestart: yes
   scanner:
+    source: publisher
+  player:
     source: publisher
