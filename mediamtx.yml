@@ -1,7 +1,9 @@
-# ScanHead MediaMTX config. The scanner path source is overridden at runtime
-# by MTX_PATHS_SCANNER_SOURCE (compose sets rtsp://$SCANNER_RTSP_IP/au:scanner.au).
+# ScanHead MediaMTX config. The Uniden pull is path `raw`, overridden at
+# runtime by MTX_PATHS_RAW_SOURCE (compose sets rtsp://$SCANNER_RTSP_IP/au:scanner.au).
+# Compose also overrides runOnAvailable from AUDIO_* env vars; values here are fallbacks.
+# Path `scanner` is the gated/compressed republish used by WHEP and VLC.
 #
-# Uniden SDS200 RTSP SSRC quirks were fixed in MediaMTX v0.20.1+; use image tag 1.
+# Uniden SDS200 RTSP SSRC quirks were fixed in MediaMTX v0.20.1+; use image tag 1-ffmpeg.
 # Uniden RTP uses dynamic UDP ports — run with host networking on Linux.
 # If the dongle accepts interleaved TCP, set rtspTransport: tcp as a fallback.
 
@@ -37,5 +39,10 @@ pathDefaults:
   rtspTransport: automatic
 
 paths:
-  scanner:
+  raw:
     source: rtsp://127.0.0.1/au:scanner.au
+    # Gate scan hiss, then compress speech. ffmpeg reads MediaMTX, not the radio.
+    runOnAvailable: "ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/raw -af highpass=f=200,agate=threshold=0.01:ratio=10:attack=5:release=150:range=0.002,acompressor=threshold=0.1:ratio=6:attack=10:release=200:makeup=4 -ac 1 -ar 8000 -c:a pcm_mulaw -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/scanner"
+    runOnAvailableRestart: yes
+  scanner:
+    source: publisher

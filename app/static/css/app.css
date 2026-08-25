@@ -63,6 +63,7 @@ body:not(.advanced-on) .display { min-height: 0; }
   color: var(--muted);
   border-bottom: 1px solid var(--line);
 }
+.client-links p { margin: 0.15rem 0; }
 .client-links code { color: var(--text); user-select: all; }
 .play { background: var(--amber); color: #1a1204; font-weight: 700; }
 .play.on { background: var(--ok); color: #062214; }
@@ -206,6 +207,10 @@ body:not(.advanced-on) .overwrite:empty {
   margin-top: auto;
   padding: 0.85rem 1rem 1.2rem;
   border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
 }
 .ui-mode label {
   display: flex;

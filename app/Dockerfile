@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY scanhead ./scanhead
 COPY static ./static
 
+ARG SCANHEAD_VERSION=dev
+ENV SCANHEAD_VERSION=${SCANHEAD_VERSION}
+
 ENV APP_PORT=8080
 EXPOSE 8080
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from scanhead import __version__ as PACKAGE_VERSION
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -15,6 +17,7 @@ class Settings:
     mediamtx_rtsp_port: int = 8554
     command_timeout_s: float = 8.0
     glt_timeout_s: float = 15.0
+    app_version: str = PACKAGE_VERSION
 
 
 def load_settings() -> Settings:
@@ -31,4 +34,5 @@ def load_settings() -> Settings:
         mediamtx_rtsp_port=int(os.environ.get("MEDIAMTX_RTSP_PORT", "8554")),
         command_timeout_s=float(os.environ.get("COMMAND_TIMEOUT_S", "8")),
         glt_timeout_s=float(os.environ.get("GLT_TIMEOUT_S", "15")),
+        app_version=os.environ.get("SCANHEAD_VERSION", "").strip() or PACKAGE_VERSION,
     )

@@ -177,6 +177,8 @@ jobs:
           file: ./app/Dockerfile
           push: true
           tags: ${{ env.TAGS }}
+          build-args: |
+            SCANHEAD_VERSION=${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
 
