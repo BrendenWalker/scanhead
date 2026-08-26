@@ -352,6 +352,10 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
         async def index():
             return FileResponse(STATIC / "index.html")
 
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def favicon():
+            return FileResponse(STATIC / "favicon.svg", media_type="image/svg+xml")
+
     return app
 
 

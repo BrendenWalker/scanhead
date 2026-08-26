@@ -38,6 +38,15 @@ def test_health_and_config():
         assert "TOP" in data["menuIds"]
 
 
+def test_favicon_served():
+    with _client()[0] as client:
+        svg = client.get("/static/favicon.svg")
+        assert svg.status_code == 200
+        assert "svg" in svg.headers.get("content-type", "")
+        ico = client.get("/favicon.ico")
+        assert ico.status_code == 200
+
+
 def test_index_served():
     with _client()[0] as client:
         res = client.get("/")

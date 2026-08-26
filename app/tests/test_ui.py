@@ -180,6 +180,17 @@ def test_app_version_is_at_page_bottom():
     assert html.rfind("id=\"app-version\"") > html.rfind("advanced-controls")
 
 
+def test_favicon_is_linked_and_present():
+    root = _parse()
+    icons = [n for n in root.walk() if n.tag == "link" and "icon" in (n.attrs.get("rel") or "")]
+    assert icons, "missing favicon link"
+    href = icons[0].attrs.get("href") or ""
+    assert href.startswith("/static/")
+    path = STATIC / href.removeprefix("/static/")
+    assert path.is_file()
+    assert path.stat().st_size > 0
+
+
 def test_action_buttons_send_displayed_channel_target():
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
     assert "state.displayed" in js
