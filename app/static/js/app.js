@@ -303,7 +303,9 @@
       $("sql").max = state.config.sqlMax;
       const listen = state.config.hlsUrl || "";
       $("client-rtsp").textContent = listen ? `vlc ${listen}` : "";
-      $("client-mplayer").textContent = listen ? `mplayer -nocache -playlist ${listen}` : "";
+      $("client-mplayer").textContent = listen
+        ? `ffmpeg -hide_banner -i ${listen} -f alsa default`
+        : "";
       $("app-version").textContent = state.config.appVersion ? `ScanHead ${state.config.appVersion}` : "";
     } catch (err) {
       $("model").textContent = err.message;

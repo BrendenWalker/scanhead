@@ -131,10 +131,11 @@ def test_advanced_controls_are_marked_and_hidden_by_css():
     assert "client-rtsp" in js
     assert "client-mplayer" in js
     assert "hlsUrl" in js
-    assert "-playlist" in js
-    assert "-nocache" in js
+    assert "ffmpeg -hide_banner" in js
+    assert "-f alsa" in js
+    assert "mplayer -" not in js
+    assert "-playlist" not in js
     assert "--rtsp-tcp" not in js
-    assert "-demuxer lavf" not in js
     assert "appVersion" in js
     assert "app-version" in js
     assert "advanced-controls" in js
@@ -165,9 +166,9 @@ def test_display_box_size_ignores_text_content():
     assert "min-width: 0" in css
 
 
-def test_mplayer_url_renders_below_vlc():
+def test_ffmpeg_url_renders_below_vlc():
     html = (STATIC / "index.html").read_text(encoding="utf-8")
-    assert html.find("VLC:") < html.find("MPlayer:")
+    assert html.find("VLC:") < html.find("ffmpeg:")
     assert html.find('id="client-rtsp"') < html.find('id="client-mplayer"')
 
 
