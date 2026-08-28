@@ -139,6 +139,17 @@ def test_portainer_stack_pulls_published_image():
     assert "MEDIAMTX_TAG=1-ffmpeg" in env
 
 
+def test_scanner_listen_backs_off_when_playlist_missing():
+    text = (ROOT / "scripts" / "scanner-listen.sh").read_text(encoding="utf-8")
+    assert "SCANNER_LISTEN_MAX_DELAY" in text
+    assert "curl" in text
+    assert "http_code" in text or "HTTP" in text
+    assert "retry in" in text
+    assert "DELAY=" in text
+    assert "* 2" in text or "DELAY * 2" in text
+    assert "sleep 2" not in text or "MAX_DELAY" in text
+
+
 def test_docker_image_bakes_scanhead_version():
     dockerfile = (ROOT / "app" / "Dockerfile").read_text(encoding="utf-8")
     workflow = (ROOT / ".github" / "workflows" / "docker-build.yml").read_text(encoding="utf-8")

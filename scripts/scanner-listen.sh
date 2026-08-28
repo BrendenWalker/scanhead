@@ -12,7 +12,10 @@ AUDIO_FORMAT="${SCANNER_AUDIO_FORMAT:-pulse}"
 AUDIO_DEVICE="${SCANNER_AUDIO_DEVICE:-default}"
 PIDFILE="${SCANNER_LISTEN_PIDFILE:-$HOME/scanner-listen.pid}"
 LOG="${SCANNER_LISTEN_LOG:-$HOME/scanner-listen.log}"
+MIN_DELAY="${SCANNER_LISTEN_MIN_DELAY:-2}"
+MAX_DELAY="${SCANNER_LISTEN_MAX_DELAY:-60}"
 FFPID=""
+DELAY="$MIN_DELAY"
 
 usage() {
   echo "usage: $0 [run|stop|status]" >&2
@@ -74,6 +77,22 @@ cleanup() {
   exit 0
 }
 
+playlist_ready() {
+  local code
+  if ! command -v curl >/dev/null 2>&1; then
+    return 0
+  fi
+  code="$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 3 --max-time 5 "$HLS_URL" || true)"
+  [[ "$code" == "200" ]]
+}
+
+bump_delay() {
+  DELAY=$((DELAY * 2))
+  if [[ "$DELAY" -gt "$MAX_DELAY" ]]; then
+    DELAY="$MAX_DELAY"
+  fi
+}
+
 cmd_run() {
   local existing
   existing="$(read_pid 2>/dev/null || true)"
@@ -84,19 +103,36 @@ cmd_run() {
   rm -f "$PIDFILE"
   echo $$ >"$PIDFILE"
   trap cleanup INT TERM
+  DELAY="$MIN_DELAY"
 
   while true; do
+    if ! playlist_ready; then
+      echo "$(date -Is) playlist unavailable, retry in ${DELAY}s" >>"$LOG"
+      sleep "$DELAY"
+      bump_delay
+      continue
+    fi
     echo "$(date -Is) starting ffmpeg" >>"$LOG"
+    local start now ran rc
+    start="$(date +%s)"
     ffmpeg -hide_banner -nostdin -loglevel warning \
       -i "$HLS_URL" \
       -f "$AUDIO_FORMAT" "$AUDIO_DEVICE" \
       >>"$LOG" 2>&1 &
     FFPID=$!
     wait "$FFPID"
-    local rc=$?
+    rc=$?
     FFPID=""
-    echo "$(date -Is) ffmpeg exit $rc" >>"$LOG"
-    sleep 2
+    now="$(date +%s)"
+    ran=$((now - start))
+    echo "$(date -Is) ffmpeg exit $rc after ${ran}s" >>"$LOG"
+    if [[ "$ran" -ge 15 ]]; then
+      DELAY="$MIN_DELAY"
+    fi
+    sleep "$DELAY"
+    if [[ "$rc" -ne 0 ]]; then
+      bump_delay
+    fi
   done
 }
 

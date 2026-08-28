@@ -70,6 +70,13 @@ body:not(.advanced-on) .display { min-height: 0; }
 .pill { border: 1px solid var(--line); border-radius: 999px; padding: 0.2rem 0.6rem; font-size: 0.75rem; }
 .pill.on { color: var(--ok); border-color: var(--ok); }
 .pill.off { color: var(--danger); border-color: var(--danger); }
+.radio-error {
+  margin: 0;
+  padding: 0.55rem 1rem;
+  color: var(--danger);
+  background: rgb(255 93 93 / 0.12);
+  border-bottom: 1px solid var(--danger);
+}
 
 audio { display: none; }
 

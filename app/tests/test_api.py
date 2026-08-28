@@ -21,6 +21,7 @@ def test_health_and_config():
         assert health.status_code == 200
         body = health.json()
         assert body["ok"] is True
+        assert body["error"] is None
         assert body["model"] == "BCD536HP"
         assert body["scanner"] == "127.0.0.1:50536"
 
@@ -180,8 +181,36 @@ def test_radio_error_is_502():
         assert "timeout" in res.json()["detail"]
 
 
+def test_health_reports_unreachable_radio():
+    radio = FakeRadio()
+    radio.model = ""
+    radio.version = ""
+    radio.status = {}
+    radio.last_error = "timeout waiting for MDL"
+    radio.psi_age = None
+    with _client(radio)[0] as client:
+        body = client.get("/api/health").json()
+        assert body["ok"] is False
+        assert body["error"] == "timeout waiting for MDL"
+        assert body["scanner"] == "127.0.0.1:50536"
+        assert body["psiAgeS"] is None
+        assert body["model"] == ""
+
+
 def test_websocket_pushes_status():
     with _client()[0] as client:
         with client.websocket_connect("/api/ws") as ws:
             payload = ws.receive_json()
             assert payload["mode"] == "Scan Mode"
+
+
+def test_websocket_sends_radio_error_when_unreachable():
+    radio = FakeRadio()
+    radio.status = {}
+    radio.last_error = "timeout waiting for GSI"
+    radio.fail = RadioError("timeout waiting for GSI")
+    with _client(radio)[0] as client:
+        with client.websocket_connect("/api/ws") as ws:
+            payload = ws.receive_json()
+            assert payload["error"] == "timeout waiting for GSI"
+            assert payload["scanner"] == "127.0.0.1:50536"

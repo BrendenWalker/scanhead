@@ -63,6 +63,8 @@ class Radio:
         self._last_psi = 0.0
         self._psi_retry_at = 0.0
         self._watchdog: asyncio.Task | None = None
+        self.last_error: str | None = None
+        self._error_at = 0.0
 
     def _send(self, payload: bytes) -> None:
         if self._transport is None:
@@ -91,6 +93,7 @@ class Radio:
             log.info("connected to %s (%s) at %s:%s", self.model, self.version, self.host, self.port)
         except Exception:
             log.exception("identify failed")
+        self._ensure_watchdog()
 
     async def close(self) -> None:
         if self._watchdog is not None:
@@ -130,12 +133,27 @@ class Radio:
         for queue in list(self._listeners):
             self._put(queue, status)
 
+    def _set_error(self, message: str) -> None:
+        self.last_error = message
+        self._error_at = time.monotonic()
+
+    def _clear_error(self) -> None:
+        self.last_error = None
+        self._error_at = 0.0
+
+    def _raise_if_recent_error(self, min_age_s: float = 2.0) -> None:
+        if not self.last_error:
+            return
+        if (time.monotonic() - self._error_at) < min_age_s:
+            raise RadioError(self.last_error)
+
     def _on_datagram(self, data: bytes, addr) -> None:  # noqa: ANN001
         try:
             frame = split_frame(data)
         except Exception:
             log.exception("bad datagram from %s", addr)
             return
+        self._clear_error()
         pending = self._pending
         if frame.cmd == "PSI" and frame.is_xml:
             self._accept_psi(frame)
@@ -176,12 +194,20 @@ class Radio:
         except Exception:
             log.exception("PSI parse failed")
 
-    async def command(self, cmd: str, timeout: float | None = None, expect_xml: bool | None = None) -> Frame:
+    async def command(
+        self,
+        cmd: str,
+        timeout: float | None = None,
+        expect_xml: bool | None = None,
+        fail_fast: bool = True,
+    ) -> Frame:
         name = cmd.split(",", 1)[0]
         if expect_xml is None:
             expect_xml = name in {"GSI", "GLT", "MSI", "AST"}
         wait = timeout if timeout is not None else self.timeout_s
         async with self._lock:
+            if fail_fast:
+                self._raise_if_recent_error()
             if self._transport is None:
                 raise RadioError("radio is not connected")
             loop = self._loop or asyncio.get_running_loop()
@@ -191,9 +217,13 @@ class Radio:
             try:
                 payload = cmd if cmd.endswith("\r") else f"{cmd}\r"
                 self._send(payload.encode("ascii", errors="strict"))
-                return await asyncio.wait_for(future, wait)
+                result = await asyncio.wait_for(future, wait)
+                self._clear_error()
+                return result
             except TimeoutError as exc:
-                raise RadioError(f"timeout waiting for {name}") from exc
+                err = RadioError(f"timeout waiting for {name}")
+                self._set_error(str(err))
+                raise err from exc
             finally:
                 self._pending = None
 
@@ -241,15 +271,25 @@ class Radio:
             self._psi_retry_at = now + 3.0
             log.info("PSI stale (%s), re-subscribing", "never" if age is None else f"{age:.1f}s")
             try:
-                await self.command(f"PSI,{self.psi_interval_ms}", expect_xml=False, timeout=2.0)
-            except Exception:
-                log.warning("PSI re-subscribe failed", exc_info=True)
+                if not self.model:
+                    mdl = await self.command("MDL", timeout=2.0, fail_fast=False)
+                    self.model = mdl.fields[1] if len(mdl.fields) > 1 else ""
+                    ver = await self.command("VER", timeout=2.0, fail_fast=False)
+                    self.version = ",".join(ver.fields[1:]) if len(ver.fields) > 1 else ""
+                    log.info("connected to %s (%s) at %s:%s", self.model, self.version, self.host, self.port)
+                await self.command(
+                    f"PSI,{self.psi_interval_ms}", expect_xml=False, timeout=2.0, fail_fast=False
+                )
+            except RadioError as exc:
+                log.warning("PSI re-subscribe failed: %s", exc)
 
     async def snapshot(self, force: bool = False) -> dict:
         age = self.psi_age_s()
         stale = force or not self.status or age is None or age > 1.5
         if not stale:
             return self.status
+        if not self.status:
+            self._raise_if_recent_error()
         try:
             return await self.gsi()
         except RadioError:

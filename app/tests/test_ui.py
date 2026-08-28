@@ -191,6 +191,29 @@ def test_favicon_is_linked_and_present():
     assert path.stat().st_size > 0
 
 
+def test_radio_error_banner_is_visible_in_normal_mode():
+    root = _parse()
+    banner = _by_id(root, "radio-error")
+    assert banner.tag == "p"
+    assert not _in_advanced(banner)
+    assert "hidden" in banner.classes
+    css = (STATIC / "css" / "app.css").read_text(encoding="utf-8")
+    assert ".radio-error" in css
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert html.find("id=\"radio-error\"") < html.find("id=\"display\"")
+
+
+def test_ui_surfaces_health_error_instead_of_swallowing_status():
+    js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
+    assert "/api/health" in js
+    assert "radio-error" in js
+    assert "Scanner unreachable" in js
+    assert "Cannot reach scanner" in js
+    assert "/* PSI will fill in */" not in js
+    assert "refreshStatus(true).catch(() => {})" not in js
+    assert "health.ok" in js or "h.ok" in js
+
+
 def test_action_buttons_send_displayed_channel_target():
     js = (STATIC / "js" / "app.js").read_text(encoding="utf-8")
     assert "state.displayed" in js

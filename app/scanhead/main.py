@@ -77,12 +77,14 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
 
     @app.get("/api/health")
     async def health():
+        error = getattr(radio, "last_error", None)
         return {
-            "ok": True,
+            "ok": bool(radio.model) and not error,
             "model": radio.model,
             "version": radio.version,
             "scanner": f"{settings.scanner_ip}:{settings.scanner_port}",
             "psiAgeS": radio.psi_age_s(),
+            "error": error,
         }
 
     @app.get("/api/config")
@@ -116,8 +118,14 @@ def create_app(settings: Settings | None = None, radio: Radio | None = None) -> 
         await websocket.accept()
         try:
             await radio.snapshot()
-        except RadioError:
+        except RadioError as exc:
             log.warning("websocket snapshot failed")
+            await websocket.send_json(
+                {
+                    "error": str(exc),
+                    "scanner": f"{settings.scanner_ip}:{settings.scanner_port}",
+                }
+            )
         queue = radio.subscribe()
         try:
             while True:

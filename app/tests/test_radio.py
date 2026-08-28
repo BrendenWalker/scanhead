@@ -181,6 +181,45 @@ def test_radio_rejects_bad_args():
     asyncio.run(_run())
 
 
+def test_unreachable_radio_records_last_error():
+    async def _run():
+        radio = Radio("127.0.0.1", 1, timeout_s=0.2)
+        await radio.start()
+        assert radio.model == ""
+        assert radio.last_error == "timeout waiting for MDL"
+        await radio.close()
+
+    asyncio.run(_run())
+
+
+def test_snapshot_fails_fast_after_recent_timeout():
+    async def _run():
+        radio = Radio("127.0.0.1", 1, timeout_s=5)
+        radio.last_error = "timeout waiting for MDL"
+        radio._error_at = __import__("time").monotonic()
+        with pytest.raises(RadioError, match="timeout waiting for MDL"):
+            await radio.snapshot(force=True)
+
+    asyncio.run(_run())
+
+
+def test_successful_command_clears_last_error():
+    async def _run():
+        replies = {**_identify()}
+        server, port, _ = await _serve(replies)
+        radio = Radio("127.0.0.1", port, timeout_s=2)
+        try:
+            radio.last_error = "timeout waiting for MDL"
+            await radio.start()
+            assert radio.model == "BCD536HP"
+            assert radio.last_error is None
+        finally:
+            await radio.close()
+            server.close()
+
+    asyncio.run(_run())
+
+
 def test_assembler_exported():
     assembler = XmlAssembler()
     frame = split_frame(

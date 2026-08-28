@@ -10,6 +10,8 @@
     sqlTimer: 0,
     lastStatusAt: 0,
     displayed: null,
+    pollBusy: false,
+    listsLoaded: false,
   };
 
   async function api(path, opts) {
@@ -20,6 +22,48 @@
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || res.statusText);
     return data;
+  }
+
+  function setLink(on) {
+    $("link").classList.toggle("on", on);
+    $("link").classList.toggle("off", !on);
+  }
+
+  function radioErrorText(info) {
+    const where = info && info.scanner ? ` at ${info.scanner}` : "";
+    const why = (info && info.error) || "no response";
+    return `Cannot reach scanner${where} — ${why}`;
+  }
+
+  function setRadioError(message) {
+    const el = $("radio-error");
+    if (!message) {
+      el.textContent = "";
+      el.classList.add("hidden");
+      return;
+    }
+    el.textContent = message;
+    el.classList.remove("hidden");
+    setLink(false);
+    $("channel-name").textContent = "Scanner unreachable";
+  }
+
+  async function pollHealth() {
+    try {
+      const health = await api("/api/health");
+      if (health.ok) {
+        setRadioError("");
+        setLink(true);
+        if (health.model) $("model").textContent = `${health.model} ${health.version}`.trim();
+        return health;
+      }
+      setRadioError(radioErrorText(health));
+      if (!health.model) $("model").textContent = health.scanner || "scanner unreachable";
+      return health;
+    } catch (err) {
+      setRadioError(err.message || "ScanHead unreachable");
+      return { ok: false, error: String(err.message || err) };
+    }
   }
 
   function setText(id, value) {
@@ -128,18 +172,20 @@
     const proto = location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(`${proto}://${location.host}/api/ws`);
     state.lastStatusAt = Date.now();
-    ws.onopen = () => {
-      $("link").classList.add("on");
-      $("link").classList.remove("off");
-    };
+    ws.onopen = () => {};
     ws.onclose = () => {
-      $("link").classList.remove("on");
-      $("link").classList.add("off");
       setTimeout(connectWs, 1500);
     };
     ws.onmessage = (ev) => {
+      const payload = JSON.parse(ev.data);
+      if (payload.error) {
+        setRadioError(radioErrorText(payload));
+        return;
+      }
+      setRadioError("");
+      setLink(true);
       state.lastStatusAt = Date.now();
-      renderStatus(JSON.parse(ev.data));
+      renderStatus(payload);
     };
   }
 
@@ -294,33 +340,9 @@
     document.body.classList.toggle("advanced-on", on);
   }
 
-  async function init() {
-    $("sig").innerHTML = "<span></span><span></span><span></span><span></span><span></span>";
-    try {
-      state.config = await api("/api/config");
-      $("model").textContent = `${state.config.model} ${state.config.version}`.trim();
-      $("vol").max = state.config.volMax;
-      $("sql").max = state.config.sqlMax;
-      const listen = state.config.hlsUrl || "";
-      $("client-rtsp").textContent = listen ? `vlc ${listen}` : "";
-      $("client-mplayer").textContent = listen
-        ? `ffmpeg -hide_banner -i ${listen} -f alsa default`
-        : "";
-      $("app-version").textContent = state.config.appVersion ? `ScanHead ${state.config.appVersion}` : "";
-    } catch (err) {
-      $("model").textContent = err.message;
-    }
-    try {
-      await refreshStatus(true);
-    } catch {
-      /* PSI will fill in */
-    }
-    connectWs();
-    setInterval(() => {
-      if (Date.now() - state.lastStatusAt > 2000) {
-        refreshStatus(true).catch(() => {});
-      }
-    }, 1500);
+  async function loadOptional() {
+    if (state.listsLoaded) return;
+    state.listsLoaded = true;
     loadList();
     try {
       const loc = await api("/api/location");
@@ -338,6 +360,50 @@
     } catch {
       /* optional */
     }
+  }
+
+  async function init() {
+    $("sig").innerHTML = "<span></span><span></span><span></span><span></span><span></span>";
+    try {
+      state.config = await api("/api/config");
+      $("model").textContent = `${state.config.model} ${state.config.version}`.trim();
+      $("vol").max = state.config.volMax;
+      $("sql").max = state.config.sqlMax;
+      const listen = state.config.hlsUrl || "";
+      $("client-rtsp").textContent = listen ? `vlc ${listen}` : "";
+      $("client-mplayer").textContent = listen
+        ? `ffmpeg -hide_banner -i ${listen} -f alsa default`
+        : "";
+      $("app-version").textContent = state.config.appVersion ? `ScanHead ${state.config.appVersion}` : "";
+    } catch (err) {
+      $("model").textContent = err.message;
+    }
+    const health = await pollHealth();
+    if (health.ok) {
+      try {
+        await refreshStatus(true);
+      } catch (err) {
+        setRadioError(err.message);
+      }
+      loadOptional();
+    } else {
+      $("list").textContent = $("radio-error").textContent;
+    }
+    connectWs();
+    setInterval(async () => {
+      if (state.pollBusy) return;
+      state.pollBusy = true;
+      try {
+        const next = await pollHealth();
+        if (!next.ok) return;
+        if (!state.listsLoaded) loadOptional();
+        if (Date.now() - state.lastStatusAt > 2000) {
+          await refreshStatus(false).catch((err) => setRadioError(err.message));
+        }
+      } finally {
+        state.pollBusy = false;
+      }
+    }, 2000);
 
     $("play").onclick = playAudio;
     $("advanced-controls").onchange = (e) => setAdvanced(e.target.checked);

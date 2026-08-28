@@ -18,6 +18,8 @@ class FakeRadio:
         }
         self.calls: list[tuple] = []
         self.fail: Exception | None = None
+        self.last_error: str | None = None
+        self.psi_age: float | None = 0.1
         self.glt_result = {"kind": "FL", "items": [{"Index": "0", "Name": "Reno"}]}
         self.menu = {"name": "TOP", "menuType": "TypeSelect", "items": [{"Name": "Settings"}]}
         self.fields = ["OK"]
@@ -47,7 +49,7 @@ class FakeRadio:
         self._check()
 
     def psi_age_s(self) -> float | None:
-        return 0.1
+        return self.psi_age
 
     async def snapshot(self, force: bool = False) -> dict:
         self._record("snapshot", force)
