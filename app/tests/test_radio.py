@@ -19,9 +19,15 @@ class FakeScannerProtocol(asyncio.DatagramProtocol):
     def datagram_received(self, data, addr):
         cmd = data.decode("ascii").strip().rstrip("\r")
         self.received.append(cmd)
-        packets = self.replies.get(cmd) or self.replies.get(cmd.split(",", 1)[0])
-        if not packets:
-            self.transport.sendto(f"{cmd.split(',', 1)[0]},NG\r".encode(), addr)
+        name = cmd.split(",", 1)[0]
+        if cmd in self.replies:
+            packets = self.replies[cmd]
+        elif name in self.replies:
+            packets = self.replies[name]
+        else:
+            self.transport.sendto(f"{name},NG\r".encode(), addr)
+            return
+        if packets is None:
             return
         for packet in packets:
             self.transport.sendto(packet, addr)
@@ -218,6 +224,71 @@ def test_successful_command_clears_last_error():
             server.close()
 
     asyncio.run(_run())
+
+
+async def _close_goodbye_logs_reply(caplog):
+    replies = _identify()
+    server, port, proto = await _serve(replies)
+    radio = Radio("127.0.0.1", port, timeout_s=2)
+    try:
+        await radio.start()
+        with caplog.at_level("INFO", logger="scanhead.radio"):
+            await radio.close()
+        assert "PSI,0" in proto.received
+        assert any("control goodbye: PSI,0 sent, reply=" in r.message for r in caplog.records)
+        assert radio._transport is None
+        await radio.close()  # idempotent
+    finally:
+        server.close()
+
+
+async def _close_goodbye_logs_no_reply(caplog):
+    replies = {**_identify(), "PSI,0": None}
+    server, port, proto = await _serve(replies)
+    radio = Radio("127.0.0.1", port, timeout_s=2)
+    try:
+        await radio.start()
+        with caplog.at_level("INFO", logger="scanhead.radio"):
+            await radio.close()
+        assert "PSI,0" in proto.received
+        assert any("control goodbye: PSI,0 sent, no reply" in r.message for r in caplog.records)
+        assert radio._transport is None
+    finally:
+        server.close()
+
+
+async def _close_preempts_in_flight_command(caplog):
+    replies = {**_identify(), "GSI": None}
+    server, port, proto = await _serve(replies)
+    radio = Radio("127.0.0.1", port, timeout_s=8)
+    try:
+        await radio.start()
+        hung = asyncio.create_task(radio.command("GSI", expect_xml=True, timeout=8.0))
+        for _ in range(50):
+            if radio._pending is not None:
+                break
+            await asyncio.sleep(0.01)
+        assert radio._pending is not None
+        with caplog.at_level("INFO", logger="scanhead.radio"):
+            await asyncio.wait_for(radio.close(), timeout=3.0)
+        assert "PSI,0" in proto.received
+        assert any("control goodbye:" in r.message for r in caplog.records)
+        with pytest.raises(RadioError):
+            await hung
+    finally:
+        server.close()
+
+
+def test_radio_close_goodbye_logs_reply(caplog):
+    asyncio.run(_close_goodbye_logs_reply(caplog))
+
+
+def test_radio_close_goodbye_logs_no_reply(caplog):
+    asyncio.run(_close_goodbye_logs_no_reply(caplog))
+
+
+def test_radio_close_preempts_in_flight_command(caplog):
+    asyncio.run(_close_preempts_in_flight_command(caplog))
 
 
 def test_assembler_exported():

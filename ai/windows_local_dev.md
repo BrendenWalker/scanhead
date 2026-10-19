@@ -46,6 +46,8 @@ Uniden allows **one** PSI subscriber and typically **one** RTSP client. Do not r
 
 PSI is pushed only to the **last UDP client** that sent `PSI,<interval>`. One-shot probe scripts (`MDL`/`GSI`/`PSI` from a throwaway socket) steal the live display. The app reclaims PSI if it goes quiet; still avoid extra UDP clients while testing the UI.
 
+On shutdown ScanHead sends `PSI,0` (control goodbye) before closing its UDP socket. MediaMTX owns the radio’s RTSP `raw` pull — it must get its own graceful stop (TEARDOWN), or a Swarm stop-first upgrade can leave audio wedged while control recovers. Recovery for a wedged radio is still a hard power-cycle until both sides release cleanly.
+
 VOL/SQL can work while the display looks frozen: those are request/response. Live channel text is PSI. If the display is stuck, restart uvicorn so it owns PSI again, then reload the page.
 
 ## Tests
