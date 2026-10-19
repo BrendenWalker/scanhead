@@ -84,3 +84,5 @@ rtsp://<scanner-dotted-quad>/au:scanner.au
 ```
 
 Uniden’s RTSP server returns **400** if the URL host is a DNS name (`OPTIONS *` also 400s). Use the radio’s dotted-quad. G.711 µ-law (PCMU) over RTSP/RTP. ScanHead’s MediaMTX process is the sole RTSP client of the radio (path `raw`). ffmpeg then high-pass filters, noise-gates scan hiss, and compresses speech, republishing PCMU on path `scanner` (WHEP) and AAC 48 kHz on path `player` (listen-only HLS). Gate/compressor knobs are `AUDIO_*` env vars (see `.env.example`); Compose interpolates them into the ffmpeg hook. The UI uses WebRTC (WHEP `/scanner/whep`). VLC and MPlayer should use `http://<host>:8888/player/index.m3u8` (MPEG-TS HLS), not the G.711 RTSP path. The MediaMTX image must be the `*-ffmpeg` variant.
+
+The radio keeps a single RTSP client and a single remote-control client; abrupt kills without RTSP TEARDOWN / `PSI,0` can leave both paths timing out while ICMP still works. ScanHead releases control on SIGTERM; MediaMTX must close `raw` gracefully on its own stop.

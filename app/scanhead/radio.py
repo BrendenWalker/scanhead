@@ -65,6 +65,7 @@ class Radio:
         self._watchdog: asyncio.Task | None = None
         self.last_error: str | None = None
         self._error_at = 0.0
+        self._closed = False
 
     def _send(self, payload: bytes) -> None:
         if self._transport is None:
@@ -96,16 +97,43 @@ class Radio:
         self._ensure_watchdog()
 
     async def close(self) -> None:
+        """Release the Uniden PSI session, then drop the UDP socket.
+
+        Swarm stop-first sends SIGTERM then SIGKILL. Without ``PSI,0`` the radio
+        keeps the last control client forever (ICMP still works; new MDL/PSI time out).
+        """
+        if self._closed:
+            return
+        self._closed = True
+
         if self._watchdog is not None:
             self._watchdog.cancel()
             self._watchdog = None
+
+        pending = self._pending
+        if pending is not None and not pending.future.done():
+            pending.future.set_exception(RadioError("radio closing"))
+        # Let the cancelled command release ``_lock`` before we take it for goodbye.
+        await asyncio.sleep(0)
+
+        if self._transport is None:
+            log.info("control goodbye: PSI,0 skipped (not connected)")
+            return
+
         try:
-            await self.command("PSI,0", timeout=2.0)
-        except Exception:
-            pass
-        if self._transport is not None:
-            self._transport.close()
-            self._transport = None
+            frame = await self.command("PSI,0", expect_xml=False, timeout=2.0, fail_fast=False)
+            log.info("control goodbye: PSI,0 sent, reply=%s", ",".join(frame.fields))
+        except RadioError as exc:
+            if "not connected" in str(exc):
+                log.info("control goodbye: PSI,0 skipped (not connected)")
+            else:
+                log.warning("control goodbye: PSI,0 sent, no reply (%s)", exc)
+        except Exception as exc:
+            log.warning("control goodbye: PSI,0 sent, no reply (%s)", exc)
+        finally:
+            if self._transport is not None:
+                self._transport.close()
+                self._transport = None
 
     def subscribe(self) -> asyncio.Queue:
         queue: asyncio.Queue = asyncio.Queue(maxsize=8)
@@ -244,7 +272,9 @@ class Radio:
         if self._watchdog is not None:
             self._watchdog.cancel()
             self._watchdog = None
-        await self.command("PSI,0", expect_xml=False, timeout=2.0)
+        if self._closed or self._transport is None:
+            return
+        await self.command("PSI,0", expect_xml=False, timeout=2.0, fail_fast=False)
 
     def psi_age_s(self) -> float | None:
         if not self._last_psi:
